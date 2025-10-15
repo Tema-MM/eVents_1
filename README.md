@@ -1,2 +1,2 @@
-# eVents_1
-Event viewing and ticket purchasing app
+# DrFind
+Local Dr and or Hospital finding, and appointment booking app
