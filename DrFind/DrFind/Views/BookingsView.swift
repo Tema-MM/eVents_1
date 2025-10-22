@@ -5,12 +5,48 @@ import SwiftUI
 
 struct BookingsView: View {
     @ObservedObject private var store = BookingsStore.shared
-    @State private var showProfile = false
+    @State private var selectedTab = "Upcoming"
+    private let tabs = ["Upcoming", "Past"]
 
     var body: some View {
+        VStack(spacing: 0) {
+            // Tabs
+            HStack {
+                ForEach(tabs, id: \.self) { tab in
+                    Button(action: {
+                        selectedTab = tab
+                    }) {
+                        Text(tab)
+                            .font(.subheadline)
+                            .fontWeight(selectedTab == tab ? .semibold : .regular)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(
+                                selectedTab == tab ?
+                                Color.blue.opacity(0.1) :
+                                Color.clear
+                            )
+                            .foregroundColor(selectedTab == tab ? .blue : .primary)
+                            .cornerRadius(20)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+
+            // Content based on selected tab
+            if selectedTab == "Upcoming" {
+                upcomingAppointmentsView
+            } else {
+                pastAppointmentsView
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private var upcomingAppointmentsView: some View {
         Group {
             if store.items.isEmpty {
-                emptyState
+                emptyStateView(message: "No upcoming appointments", subtext: "Your appointments will appear here")
             } else {
                 List {
                     ForEach(store.items) { booking in
@@ -32,32 +68,24 @@ struct BookingsView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .background(Color(.systemGroupedBackground))
+                .background(Color.clear)
             }
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showProfile = true
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                }
-                .accessibilityLabel("Profile")
-            }
-        }
-        .sheet(isPresented: $showProfile) {
-            NavigationStack { ProfileView() }
         }
     }
 
-    private var emptyState: some View {
+    private var pastAppointmentsView: some View {
+        // For demo, showing empty state - in real app would filter past appointments
+        emptyStateView(message: "No past appointments", subtext: "Your appointment history will appear here")
+    }
+
+    private func emptyStateView(message: String, subtext: String) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "calendar.badge.plus")
                 .font(.system(size: 48))
                 .foregroundStyle(.tint)
-            Text("No bookings yet")
+            Text(message)
                 .font(.headline)
-            Text("Your appointments will appear here after you book one.")
+            Text(subtext)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -74,19 +102,32 @@ private struct BookingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: "cross.case")
-                    .foregroundStyle(.background)
+                Image("dochealthcare")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                    .foregroundStyle(.blue)
                 Text(booking.placeName).font(.headline)
             }
             HStack(spacing: 8) {
-                Label(booking.date.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+                Image(systemName: "clock")
+                    .foregroundStyle(.secondary)
+                Text(booking.date.formatted(date: .abbreviated, time: .shortened))
                 Spacer()
             }
             if !booking.userName.isEmpty {
-                Label(booking.userName, systemImage: "person")
+                HStack {
+                    Image(systemName: "person")
+                        .foregroundStyle(.secondary)
+                    Text(booking.userName)
+                }
             }
             if !booking.userContact.isEmpty {
-                Label(booking.userContact, systemImage: "phone")
+                HStack {
+                    Image(systemName: "phone")
+                        .foregroundStyle(.secondary)
+                    Text(booking.userContact)
+                }
             }
             if let note = booking.note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(note)
